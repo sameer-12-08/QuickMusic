@@ -1,0 +1,15 @@
+{
+  "source": "Starter file. Run Tools/convert_themes.py to replace it with all Monkeytype themes (https://github.com/monkeytypegame/monkeytype, GPL-3.0).",
+  "themes": [
+    {
+      "name": "serika_dark",
+      "background": "#323437",
+      "main": "#e2b714",
+      "caption": "#e2b714",
+      "text": "#d1d0c5",
+      "sub": "#646669",
+      "subAlt": "#2c2e31",
+      "error": "#ca4754"
+    }
+  ]
+}

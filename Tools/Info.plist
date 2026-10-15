@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleName</key>
+    <string>QuickFLAC</string>
+    <key>CFBundleDisplayName</key>
+    <string>QuickFLAC</string>
+    <!-- Any unique reverse-domain name works; change "local" to something of yours if you like. -->
+    <key>CFBundleIdentifier</key>
+    <string>local.quickflac</string>
+    <key>CFBundleExecutable</key>
+    <string>QuickFLAC</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>14.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+
+    <!-- Lets Finder offer "Open With > QuickFLAC" for these file types. -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>FLAC audio</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <!-- "Alternate" = offered in the menu, but we don't steal the default from other apps. -->
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.xiph.flac</string>
+            </array>
+        </dict>
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>WAV audio</string>
+            <key>CFBundleTypeRole</key>
+            <string>Viewer</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.microsoft.waveform-audio</string>
+            </array>
+        </dict>
+    </array>
+</dict>
+</plist>
