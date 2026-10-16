@@ -14,20 +14,21 @@ enum ArtworkLoader {
     static let maxPixels = 160                 // longest side of the thumbnail, in pixels
     private static let maxEmbeddedBytes = 12_000_000   // ignore absurdly large embedded pictures
 
-    static func load(for url: URL) -> NSImage? {
+    /// `maxPixels` defaults to the small thumbnail size; the full-screen player asks for more.
+    static func load(for url: URL, maxPixels: Int = ArtworkLoader.maxPixels) -> NSImage? {
         if url.pathExtension.lowercased() == "flac",
            let data = embeddedFLACPicture(url),
            let source = CGImageSourceCreateWithData(data as CFData, nil),
-           let image = thumbnail(from: source) {
+           let image = thumbnail(from: source, maxPixels: maxPixels) {
             return image
         }
-        return folderArtwork(near: url)
+        return folderArtwork(near: url, maxPixels: maxPixels)
     }
 
     // MARK: - Shrinking
 
     /// ImageIO can decode straight to a small size, so the full-size bitmap is never built.
-    private static func thumbnail(from source: CGImageSource) -> NSImage? {
+    private static func thumbnail(from source: CGImageSource, maxPixels: Int) -> NSImage? {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true,     // respect rotation
@@ -40,14 +41,14 @@ enum ArtworkLoader {
 
     // MARK: - Folder art
 
-    private static func folderArtwork(near url: URL) -> NSImage? {
+    private static func folderArtwork(near url: URL, maxPixels: Int) -> NSImage? {
         let folder = url.deletingLastPathComponent()
         for name in ["cover", "folder", "front", "album", "artwork"] {
             for ext in ["jpg", "jpeg", "png"] {
                 let candidate = folder.appendingPathComponent("\(name).\(ext)")
                 if FileManager.default.fileExists(atPath: candidate.path),
                    let source = CGImageSourceCreateWithURL(candidate as CFURL, nil),
-                   let image = thumbnail(from: source) {
+                   let image = thumbnail(from: source, maxPixels: maxPixels) {
                     return image
                 }
             }
@@ -114,13 +115,13 @@ enum ArtworkLoader {
     }
 }
 
-/// Remembers the last few thumbnails (so going back a song is instant) and
+/// Remembers the recent thumbnails (so going back a song is instant) and
 /// forgets them automatically if the system needs memory.
 final class ArtworkCache {
     static let shared = ArtworkCache()
 
     private let cache = NSCache<NSURL, NSImage>()     // NSCache = a dict that evicts itself
-    private init() { cache.countLimit = 12 }          // 12 x ~100 KB at most
+    private init() { cache.countLimit = 60 }          // 60 x ~100 KB = about 6 MB at most (the icon grid shows many covers)
 
     /// Returns the cached thumbnail, or loads it on a background thread.
     func image(for url: URL) async -> NSImage? {

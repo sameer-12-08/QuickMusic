@@ -43,9 +43,10 @@ struct Palette {
     let error: Color
     let isDark: Bool       // lets us switch macOS controls to their dark/light look
 
-    init(_ theme: Theme) {
+    /// `accent` replaces the theme's main color (used by "match album artwork").
+    init(_ theme: Theme, accent: Color? = nil) {
         background = Color(hex: theme.background)
-        main = Color(hex: theme.main)
+        main = accent ?? Color(hex: theme.main)
         caption = Color(hex: theme.caption)
         text = Color(hex: theme.text)
         sub = Color(hex: theme.sub)

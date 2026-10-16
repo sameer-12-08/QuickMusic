@@ -1,7 +1,7 @@
 import Foundation
 import AVFoundation
 
-/// Reads title/artist from a file's tags.
+/// Reads title, artist, album and track/disc numbers from a file's tags.
 ///
 /// FLAC: we read the file's header ourselves. A FLAC file starts with the bytes "fLaC",
 /// then a chain of small metadata blocks. Block type 4 holds "KEY=value" text tags
@@ -80,8 +80,16 @@ enum MetadataReader {
             let value = String(text[text.index(after: equals)...])
             if key == "TITLE", meta.title == nil { meta.title = value }
             if key == "ARTIST", meta.artist == nil { meta.artist = value }
+            if key == "ALBUM", meta.album == nil { meta.album = value }
+            if key == "TRACKNUMBER", meta.trackNumber == nil { meta.trackNumber = leadingNumber(value) }
+            if key == "DISCNUMBER", meta.discNumber == nil { meta.discNumber = leadingNumber(value) }
         }
         return meta
+    }
+
+    /// "3" -> 3, "3/12" -> 3 (tags often store "track/total").
+    private static func leadingNumber(_ text: String) -> Int? {
+        Int(text.split(separator: "/").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? "")
     }
 
     // MARK: - Everything else (WAV)
@@ -97,6 +105,7 @@ enum MetadataReader {
         }
 
         return TrackMetadata(title: await text(for: .commonIdentifierTitle),
-                             artist: await text(for: .commonIdentifierArtist))
+                             artist: await text(for: .commonIdentifierArtist),
+                             album: await text(for: .commonIdentifierAlbumName))
     }
 }

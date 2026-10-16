@@ -22,6 +22,13 @@ struct ThemePicker: View {
             TextField("Search themes", text: $query)
                 .textFieldStyle(.roundedBorder)
 
+            Toggle("Match accent color to album artwork",
+                   isOn: Binding(get: { store.matchArtwork },
+                                 set: { store.setMatchArtwork($0) }))
+                .toggleStyle(.checkbox)
+                .font(.caption)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             if all.isEmpty {
                 Text("No themes found.\nRun Tools/convert_themes.py to generate themes.json, then rebuild.")
                     .font(.caption)

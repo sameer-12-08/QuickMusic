@@ -5,6 +5,8 @@ import AppKit
 struct ControlsBar: View {
     let playback: PlaybackController
     let themes: ThemeStore
+    let onMiniPlayer: () -> Void
+    let onFullScreen: () -> Void
 
     @Environment(\.palette) private var palette
     @LocalState private var showThemes = false
@@ -35,6 +37,22 @@ struct ControlsBar: View {
                 .help("Themes")
                 .popover(isPresented: $showThemes) { ThemePicker(store: themes) }
 
+                // Shrinks the app into the small floating player.
+                Button(action: onMiniPlayer) {
+                    Image(systemName: "pip.enter")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.sub)
+                .help("Mini Player")
+
+                // Opens the big full-screen Now Playing screen.
+                Button(action: onFullScreen) {
+                    Image(systemName: "rectangle.expand.vertical")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(palette.sub)
+                .help("Full Screen Player")
+
                 Spacer()
 
                 // Center: transport buttons.
@@ -42,7 +60,6 @@ struct ControlsBar: View {
                     Button(action: playback.previous) {
                         Image(systemName: "backward.fill")
                     }
-                    .keyboardShortcut(.leftArrow, modifiers: .command)
                     .disabled(player.title == nil)
 
                     Button(action: player.togglePlayPause) {
@@ -55,7 +72,6 @@ struct ControlsBar: View {
                     Button(action: playback.next) {
                         Image(systemName: "forward.fill")
                     }
-                    .keyboardShortcut(.rightArrow, modifiers: .command)
                     .disabled(playback.queue.itemAfterCurrent() == nil)   // greyed out at the end of the queue
                 }
                 .buttonStyle(.plain)

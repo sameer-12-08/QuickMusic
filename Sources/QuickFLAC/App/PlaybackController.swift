@@ -13,10 +13,14 @@ final class PlaybackController {
     private(set) var artwork: NSImage?   // small thumbnail of the playing song's cover, if any
 
     @ObservationIgnored private var artworkTask: Task<Void, Never>?
+    /// Set by the app: tells the library to add 1 to a song's play count.
+    @ObservationIgnored var onPlayCounted: (@MainActor (Track.ID) -> Void)?
+    /// Set by the app: tells the theme about the new cover (nil = no cover), so it can match its color.
+    @ObservationIgnored var onArtworkChanged: (@MainActor (NSImage?) -> Void)?
 
     init() {
         // When a song ends, the player calls this closure (a closure is like a Python lambda).
-        player.onFinished = { [weak self] in self?.next() }
+        player.onFinished = { [weak self] in self?.songFinished() }
     }
 
     // MARK: - Actions the UI can trigger
@@ -35,6 +39,26 @@ final class PlaybackController {
 
     func playNext(_ tracks: [Track]) { queue.insertNext(tracks) }
     func enqueue(_ tracks: [Track]) { queue.append(tracks) }
+
+    // MARK: - Albums (and artists / folders): queued as one block
+
+    /// Plays a whole album: the songs go into the queue as one block (after the playing
+    /// song, or after the playing album), and playback starts at `startAt` (or the first song).
+    /// Songs above the start point stay in the block, so "previous" walks back through the album.
+    func playGroup(_ tracks: [Track], startAt track: Track? = nil) {
+        let items = queue.insertNext(tracks, groupID: UUID())
+        let first = track.flatMap { wanted in items.first { $0.track.id == wanted.id } } ?? items.first
+        if let first { start(first) }
+    }
+
+    func playNextGroup(_ tracks: [Track]) { queue.insertNext(tracks, groupID: UUID()) }
+    func enqueueGroup(_ tracks: [Track]) { queue.append(tracks, groupID: UUID()) }
+
+    /// A song reached its end: it counts as played, then the next one starts.
+    private func songFinished() {
+        if let track = queue.currentItem?.track { onPlayCounted?(track.id) }
+        next()
+    }
 
     /// Next entry. Unplayable files (moved/deleted) are skipped. At the end of the queue, nothing happens.
     func next() {
@@ -68,6 +92,7 @@ final class PlaybackController {
             let image = await ArtworkCache.shared.image(for: url)
             guard !Task.isCancelled, player.currentURL == url else { return }
             artwork = image
+            onArtworkChanged?(image)
         }
     }
 
@@ -76,8 +101,16 @@ final class PlaybackController {
     private func start(_ item: QueueItem) -> Bool {
         let track = item.track
         let label = track.artist.map { "\($0) – \(track.displayTitle)" } ?? track.displayTitle
+
+        // Remember what was playing, so we can count it if it was played long enough
+        // (30 seconds, or half of a very short song) before being skipped.
+        let previous = queue.currentItem?.track
+        let playedSeconds = player.currentTime()
+        let neededSeconds = min(30, player.duration / 2)
+
         do {
             try player.load(track.url, title: label)
+            if let previous, playedSeconds >= neededSeconds { onPlayCounted?(previous.id) }
             queue.setCurrent(item.id)     // only move the cursor if loading worked
             loadArtwork(for: track.url)
             return true

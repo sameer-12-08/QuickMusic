@@ -5,6 +5,7 @@ Run it from the project folder (needs internet, Python 3, no extra packages):
 
     python3 Tools/convert_themes.py          # normal: reads themes.ts
     python3 Tools/convert_themes.py --css    # fallback: reads the static/themes/*.css files
+    python3 Tools/convert_themes.py --ts ~/Downloads/themes.ts   # no internet here? use a file you saved
 
 Monkeytype color  ->  our UI role
     bg        ->  background
@@ -103,10 +104,15 @@ def to_ours(name: str, f: dict) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--css", action="store_true", help="read the CSS files instead of themes.ts")
+    parser.add_argument("--ts", metavar="FILE", help="read a themes.ts you saved yourself (no download)")
     args = parser.parse_args()
 
     themes = {}
-    if not args.css:
+    if args.ts:
+        themes = parse_themes_ts(Path(args.ts).expanduser().read_text(encoding="utf-8"))
+        if not themes:
+            sys.exit(f"No themes found in {args.ts}. Is it Monkeytype's frontend/src/ts/constants/themes.ts?")
+    elif not args.css:
         print("Downloading themes.ts ...", file=sys.stderr)
         themes = parse_themes_ts(fetch(THEMES_TS_URL))
         if len(themes) < 10:
